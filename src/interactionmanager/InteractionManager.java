@@ -9,6 +9,9 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import rise.core.utils.tecs.Behaviour;
+import rise.core.utils.tecs.TECSClient;
+
 /**
  *
  */
@@ -17,17 +20,17 @@ public class InteractionManager {
 	private static final String HOST = "127.0.0.1";
 	private static final int PORT = 1111;
 
-	private static String[] prompts;
-	private static String[] updates;
-	private static String[] negativeResponses;
+	private static String[] confirmations = { "Je vroeg", "De vraag is", "Jouw vraag was" };
+	private static String[] prompts = new String[] { "Wil je nog een vraag stellen?", "Heb je een vraag?" };
+	private static String[] updates = new String[] { "Even nadenken.", "Even kijken" };
+	private static String[] negativeResponses = new String[] { "Daar kon ik geen antwoord op vinden.",
+			"Sorry, daar kon ik niets over vinden." };
 
 	/**
-	 * @param args the command line arguments
+	 * @param args
+	 *            the command line arguments
 	 */
 	public static void main(String[] args) {
-		prompts = new String[]{"Wil je nog een vraag stellen?"};
-		updates = new String[]{"Even nadenken."};
-		negativeResponses = new String[]{"Daar kon ik geen antwoord op vinden."};
 
 		PrintWriter out = null;
 		BufferedReader in = null;
@@ -44,18 +47,31 @@ public class InteractionManager {
 			System.exit(1);
 		}
 
+		TECSClient tc = new TECSClient("192.168.1.147", "TECSClient", 1234);
+		tc.startListening();
+
 		Scanner scanner = new Scanner(System.in);
 		String question;
 		while (true) {
+			String prompt = prompts[(int) (Math.random() * confirmations.length - 1)];
+			tc.send(new Behaviour(1, "Propose", prompt));
+			tc.send(new Behaviour(1, "StandHead", ""));
+
 			question = scanner.nextLine();
 			if (question != null) {
 				out.println(question);
+				String confirmation = confirmations[(int) (Math.random() * confirmations.length - 1)];
+				tc.send(new Behaviour(1, "Me", confirmation + ": " + question));
+				tc.send(new Behaviour(1, "State", ""));
+				tc.send(new Behaviour(1, "StandHead", ""));
 			}
 
 			String answer;
 			try {
 				answer = in.readLine();
-				System.out.println("Received answer: " + answer);
+				System.out.println(answer);
+				tc.send(new Behaviour(1, "Propose", answer));
+				tc.send(new Behaviour(1, "StandHead", ""));
 			} catch (IOException ex) {
 				Logger.getLogger(InteractionManager.class.getName()).log(Level.SEVERE, null, ex);
 			}
