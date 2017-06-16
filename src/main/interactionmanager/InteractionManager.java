@@ -5,11 +5,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
+
+import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import main.interactionmanager.gui.GUI;
 import rise.core.utils.tecs.Behaviour;
 import rise.core.utils.tecs.TECSClient;
 
@@ -18,7 +23,10 @@ import rise.core.utils.tecs.TECSClient;
  */
 public class InteractionManager {
 
+	public static final List<String> holder = new LinkedList<String>();
+
 	private static final boolean USE_NAO = false;
+	private static final boolean USE_TEST_QUESTION = false;
 
 	private static final String HOST = "127.0.0.1";
 	private static final int PORT = 1111;
@@ -31,6 +39,10 @@ public class InteractionManager {
 	private static Scanner questionReader = null;
 	private static TECSClient tc = null;
 
+	private static GUI gui = null;
+
+	private static Logger logger = null;
+
 	private static String[] confirmations = { "Je vroeg", "De vraag is", "Jouw vraag was" };
 	private static String[] prompts = new String[] { "Wil je nog een vraag stellen?", "Heb je een vraag?" };
 	private static String[] updates = new String[] { "Even nadenken.", "Even kijken" };
@@ -42,22 +54,25 @@ public class InteractionManager {
 	 *            the command line arguments
 	 */
 	public static void main(String[] args) {
-		Logger logger = LoggerFactory.getLogger(InteractionManager.class);
-		logger.info("Hello");
+		logger = LoggerFactory.getLogger(InteractionManager.class);
+		logger.info("NEW SESSION");
 
 		initStreams();
-
 		if (USE_NAO) {
 			tc = new TECSClient("192.168.1.147", "TECSClient", 1234);
 			tc.startListening();
+			logger.info("Connected to TECS server");
 		}
-
-		if (false) {
+		if (USE_TEST_QUESTION) {
 			sendTestQuestion();
 		}
 
-		questionReader = new Scanner(System.in);
-		String question = null;
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				gui = new GUI();
+			}
+		});
+
 		while (true) {
 			// Ask for a question
 			String prompt = prompts[(int) (Math.random() * confirmations.length - 1)];
@@ -67,19 +82,29 @@ public class InteractionManager {
 			}
 
 			// Send input
-			question = questionReader.nextLine();
-			if (question != null) {
-				if (question.equals(EXIT_COMMAND)) {
-					break;
+			// question = questionReader.nextLine();
+
+			synchronized (holder) {
+				while (holder.isEmpty()) {
+					try {
+						holder.wait();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
-				sendQuestion(question);
+			}
+			String question = holder.remove(0);
+			if (question != null && question.equals(EXIT_COMMAND)) {
+				break;
 			}
 
+			sendQuestion(question);
 			// Return response
 			String answer;
 			try {
 				answer = in.readLine();
-				System.out.println(answer);
+				logger.info("Received answer: " + answer);
+				gui.showAnswer(answer);
 				if (USE_NAO) {
 					tc.send(new Behaviour(1, "Propose", answer));
 					tc.send(new Behaviour(1, "StandHead", ""));
@@ -91,19 +116,30 @@ public class InteractionManager {
 
 		// Clean up on receiving exit command
 		closeStreams();
+		logger.info("END OF SESSION");
+	}
+
+	private static void showGUI() {
+		new GUI();
 	}
 
 	private static void sendTestQuestion() {
-		out.println("Wat is een computer");
+		String question = "Wat is een computer";
+		out.println(question);
+		logger.info("Sending question (test): " + question);
+
 		try {
-			System.out.println(in.readLine());
+			String answer = in.readLine();
+			logger.info("Received answer (test): " + answer);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private static void sendQuestion(String question) {
+	public static void sendQuestion(String question) {
 		out.println(question);
+		logger.info("Sending question: " + question);
+
 		String confirmation = confirmations[(int) (Math.random() * confirmations.length - 1)];
 		if (USE_NAO) {
 			tc.send(new Behaviour(1, "Me", confirmation + ": " + question));
@@ -122,8 +158,8 @@ public class InteractionManager {
 		}
 
 		if (out == null || in == null) {
-			System.err.println("Could not initialize communication streams.");
-			System.exit(1);
+			logger.error("Failed to initialize streams");
+			// System.exit(1);
 		}
 	}
 
@@ -139,5 +175,6 @@ public class InteractionManager {
 		if (USE_NAO) {
 			tc.disconnect();
 		}
+		logger.info("Closed streams");
 	}
 }
