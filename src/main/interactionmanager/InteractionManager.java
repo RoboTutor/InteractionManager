@@ -1,4 +1,4 @@
-package interactionmanager;
+package main.interactionmanager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,8 +6,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import rise.core.utils.tecs.Behaviour;
 import rise.core.utils.tecs.TECSClient;
@@ -41,6 +42,9 @@ public class InteractionManager {
 	 *            the command line arguments
 	 */
 	public static void main(String[] args) {
+		Logger logger = LoggerFactory.getLogger(InteractionManager.class);
+		logger.info("Hello");
+
 		initStreams();
 
 		if (USE_NAO) {
@@ -48,7 +52,9 @@ public class InteractionManager {
 			tc.startListening();
 		}
 
-		sendTestQuestion();
+		if (false) {
+			sendTestQuestion();
+		}
 
 		questionReader = new Scanner(System.in);
 		String question = null;
@@ -79,7 +85,7 @@ public class InteractionManager {
 					tc.send(new Behaviour(1, "StandHead", ""));
 				}
 			} catch (IOException ex) {
-				Logger.getLogger(InteractionManager.class.getName()).log(Level.SEVERE, null, ex);
+
 			}
 		}
 
@@ -112,7 +118,7 @@ public class InteractionManager {
 			out = new PrintWriter(socket.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (IOException ex) {
-			Logger.getLogger(InteractionManager.class.getName()).log(Level.SEVERE, null, ex);
+
 		}
 
 		if (out == null || in == null) {

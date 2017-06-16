@@ -1,5 +1,7 @@
+log/
 build/
 nbproject/
 bin/
 .settings/
 .classpath
+/target/
