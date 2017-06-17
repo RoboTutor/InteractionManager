@@ -1,9 +1,7 @@
 package main.interactionmanager.gui;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -12,8 +10,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -21,9 +17,6 @@ import main.interactionmanager.InteractionManager;
 
 public class GUI extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 1903142717890981086L;
-
-	private static final int fontStyle = Font.BOLD;
-	private static final int fontSize = 18;
 
 	private JTextField questionField;
 	private JTextField answerField;

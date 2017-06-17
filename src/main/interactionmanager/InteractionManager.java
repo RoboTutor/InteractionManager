@@ -7,7 +7,6 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Scanner;
 
 import javax.swing.SwingUtilities;
 
@@ -25,8 +24,10 @@ public class InteractionManager {
 
 	public static final List<String> holder = new LinkedList<String>();
 
-	private static final boolean USE_NAO = false;
-	private static final boolean USE_TEST_QUESTION = false;
+	private static final boolean USE_NAO = true;
+	private static final boolean USE_TEST_QUESTION = true;
+
+	private static boolean answeringQuestion = false;
 
 	private static final String HOST = "127.0.0.1";
 	private static final int PORT = 1111;
@@ -36,7 +37,6 @@ public class InteractionManager {
 	private static Socket socket = null;
 	private static PrintWriter out = null;
 	private static BufferedReader in = null;
-	private static Scanner questionReader = null;
 	private static TECSClient tc = null;
 
 	private static GUI gui = null;
@@ -81,9 +81,6 @@ public class InteractionManager {
 				tc.send(new Behaviour(1, "StandHead", ""));
 			}
 
-			// Send input
-			// question = questionReader.nextLine();
-
 			synchronized (holder) {
 				while (holder.isEmpty()) {
 					try {
@@ -99,10 +96,15 @@ public class InteractionManager {
 			}
 
 			sendQuestion(question);
+			answeringQuestion = true;
+			setTimeout();// () -> tc.send(new Behaviour(1, "Think", "Even
+							// denken")), 5000);
+
 			// Return response
 			String answer;
 			try {
 				answer = in.readLine();
+				answeringQuestion = false;
 				logger.info("Received answer: " + answer);
 				gui.showAnswer(answer);
 				if (USE_NAO) {
@@ -119,8 +121,19 @@ public class InteractionManager {
 		logger.info("END OF SESSION");
 	}
 
-	private static void showGUI() {
-		new GUI();
+	private static void setTimeout() {
+		new Thread(() -> {
+			try {
+				Thread.sleep(8000);
+				if (answeringQuestion) {
+					tc.send(new Behaviour(1, "Think", "Even denken"));
+					tc.send(new Behaviour(1, "StandHead", ""));
+					setTimeout();
+				}
+			} catch (Exception e) {
+				System.err.println(e);
+			}
+		}).start();
 	}
 
 	private static void sendTestQuestion() {
@@ -159,12 +172,11 @@ public class InteractionManager {
 
 		if (out == null || in == null) {
 			logger.error("Failed to initialize streams");
-			// System.exit(1);
+			System.exit(1);
 		}
 	}
 
 	private static void closeStreams() {
-		questionReader.close();
 		out.close();
 		try {
 			socket.close();
