@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import org.slf4j.Logger;
@@ -24,8 +26,10 @@ public class InteractionManager {
 
 	public static final List<String> holder = new LinkedList<String>();
 
-	private static final boolean USE_NAO = true;
+	private static final boolean USE_NAO = false;
 	private static final boolean USE_TEST_QUESTION = true;
+
+	private static String userName = null;
 
 	private static boolean answeringQuestion = false;
 
@@ -45,7 +49,8 @@ public class InteractionManager {
 
 	private static String[] confirmations = { "Je vroeg", "De vraag is", "Jouw vraag was" };
 	private static String[] prompts = new String[] { "Wil je nog een vraag stellen?", "Heb je een vraag?" };
-	private static String[] updates = new String[] { "Even nadenken.", "Even kijken" };
+	private static String[] updates = new String[] { "Even nadenken.", "Even kijken.",
+			"Daar moet ik even naar kijken." };
 	private static String[] negativeResponses = new String[] { "Daar kon ik geen antwoord op vinden.",
 			"Sorry, daar kon ik niets over vinden." };
 
@@ -66,6 +71,14 @@ public class InteractionManager {
 		if (USE_TEST_QUESTION) {
 			sendTestQuestion();
 		}
+
+		// Wait for input to continue
+		try {
+			System.in.read();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		introduce();
 
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
@@ -97,8 +110,7 @@ public class InteractionManager {
 
 			sendQuestion(question);
 			answeringQuestion = true;
-			setTimeout();// () -> tc.send(new Behaviour(1, "Think", "Even
-							// denken")), 5000);
+			setTimeout();
 
 			// Return response
 			String answer;
@@ -121,12 +133,24 @@ public class InteractionManager {
 		logger.info("END OF SESSION");
 	}
 
+	private static void introduce() {
+		if (USE_NAO) {
+			tc.send(new Behaviour(1, "XWaving", "Hallo! Hoe heet je?"));
+		}
+		userName = JOptionPane.showInputDialog("Wat is je naam?");
+		if (USE_NAO) {
+			tc.send(new Behaviour(1, "Me", "Dag " + userName + "! Je kan nu je vragen aan mij stellen!"));
+			tc.send(new Behaviour(1, "Propose", "Zullen we beginnen?"));
+		}
+	}
+
 	private static void setTimeout() {
 		new Thread(() -> {
 			try {
 				Thread.sleep(8000);
 				if (answeringQuestion) {
-					tc.send(new Behaviour(1, "Think", "Even denken"));
+					String update = updates[(int) (Math.random() * updates.length - 1)];
+					tc.send(new Behaviour(1, "Think", update));
 					tc.send(new Behaviour(1, "StandHead", ""));
 					setTimeout();
 				}
@@ -137,7 +161,7 @@ public class InteractionManager {
 	}
 
 	private static void sendTestQuestion() {
-		String question = "Wat is een computer";
+		String question = "Wat is een computer?";
 		out.println(question);
 		logger.info("Sending question (test): " + question);
 

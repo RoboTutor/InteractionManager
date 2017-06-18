@@ -9,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -19,7 +20,7 @@ public class GUI extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 1903142717890981086L;
 
 	private JTextField questionField;
-	private JTextField answerField;
+	private JTextArea answerArea;
 	private JButton enterQuestionButton;
 	private JButton nextQuestionButton;
 
@@ -53,12 +54,12 @@ public class GUI extends JFrame implements ActionListener {
 		emptyPanel.setPreferredSize(new Dimension(400, 1));
 		jPanel.add(emptyPanel);
 
-		answerField = new JTextField();
-		answerField.setPreferredSize(new Dimension(400, 50));
-		answerField.setMaximumSize(answerField.getPreferredSize());
-		answerField.setEditable(false);
-		// answerField.setBorder(new EmptyBorder(50, 0, 10, 0));
-		jPanel.add(answerField);
+		answerArea = new JTextArea();
+		answerArea.setPreferredSize(new Dimension(400, 50));
+		answerArea.setMaximumSize(answerArea.getPreferredSize());
+		answerArea.setEditable(false);
+		answerArea.setLineWrap(true);
+		jPanel.add(answerArea);
 
 		JPanel buttonsPanel = new JPanel();
 		enterQuestionButton = new JButton("Stuur vraag");
@@ -75,10 +76,9 @@ public class GUI extends JFrame implements ActionListener {
 	}
 
 	public void showAnswer(String answer) {
-		answerField.setText(answer);
-		System.out.println(answerField.getText());
-		answerField.repaint();
-		answerField.validate();
+		answerArea.setText(answer);
+		answerArea.repaint();
+		answerArea.validate();
 
 		nextQuestionButton.setEnabled(true);
 	}
@@ -90,10 +90,12 @@ public class GUI extends JFrame implements ActionListener {
 				InteractionManager.holder.add(questionField.getText());
 				InteractionManager.holder.notify();
 			}
+			questionField.setEditable(false);
 			enterQuestionButton.setEnabled(false);
 		} else if (e.getSource() == nextQuestionButton) {
 			questionField.setText("");
-			answerField.setText("");
+			questionField.setEditable(true);
+			answerArea.setText("");
 			nextQuestionButton.setEnabled(false);
 		}
 	}
