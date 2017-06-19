@@ -26,7 +26,7 @@ public class GUI extends JFrame implements ActionListener {
 
 	public GUI() {
 		setSize(500, 300);
-		setLocation(0, 0);
+		setLocation(500, 500);
 
 		setResizable(false);
 		setTitle("GUI");
@@ -41,7 +41,7 @@ public class GUI extends JFrame implements ActionListener {
 		JPanel jPanel = new JPanel();
 		jPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
 
-		jPanel.add(new JLabel("Typ je vraag in"));
+		jPanel.add(new JLabel("Stel je vraag:"));
 
 		questionField = new JTextField();
 		questionField.setPreferredSize(new Dimension(400, 40));
@@ -90,8 +90,13 @@ public class GUI extends JFrame implements ActionListener {
 				InteractionManager.holder.add(questionField.getText());
 				InteractionManager.holder.notify();
 			}
-			questionField.setEditable(false);
-			enterQuestionButton.setEnabled(false);
+
+			if (questionField.getText().equals(InteractionManager.START_COMMAND)) {
+				questionField.setText("");
+			} else {
+				questionField.setEditable(false);
+				enterQuestionButton.setEnabled(false);
+			}
 		} else if (e.getSource() == nextQuestionButton) {
 			questionField.setText("");
 			questionField.setEditable(true);

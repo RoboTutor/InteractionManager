@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -26,16 +25,18 @@ public class InteractionManager {
 
 	public static final List<String> holder = new LinkedList<String>();
 
-	private static final boolean USE_NAO = false;
+	private static final boolean USE_NAO = true;
 	private static final boolean USE_TEST_QUESTION = true;
 
 	private static String userName = null;
 
 	private static boolean answeringQuestion = false;
+	private static boolean isFirstQuestion = false;
 
 	private static final String HOST = "127.0.0.1";
 	private static final int PORT = 1111;
 
+	public static final String START_COMMAND = "START";
 	private static final String EXIT_COMMAND = "EXIT";
 
 	private static Socket socket = null;
@@ -80,18 +81,14 @@ public class InteractionManager {
 		}
 		introduce();
 
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				gui = new GUI();
-			}
-		});
-
 		while (true) {
 			// Ask for a question
-			String prompt = prompts[(int) (Math.random() * confirmations.length - 1)];
-			if (USE_NAO) {
-				tc.send(new Behaviour(1, "Propose", prompt));
-				tc.send(new Behaviour(1, "StandHead", ""));
+			if (!isFirstQuestion) {
+				String prompt = prompts[(int) (Math.random() * prompts.length)];
+				if (USE_NAO) {
+					tc.send(new Behaviour(1, "Propose", prompt));
+					tc.send(new Behaviour(1, "StandHead", ""));
+				}
 			}
 
 			synchronized (holder) {
@@ -104,12 +101,19 @@ public class InteractionManager {
 				}
 			}
 			String question = holder.remove(0);
-			if (question != null && question.equals(EXIT_COMMAND)) {
-				break;
+			if (question != null) {
+				if (question.equals(START_COMMAND)) {
+					introduce();
+					continue;
+				} else if (question.equals(EXIT_COMMAND)) {
+					gui.dispose();
+					break;
+				}
 			}
 
 			sendQuestion(question);
 			answeringQuestion = true;
+			isFirstQuestion = false;
 			setTimeout();
 
 			// Return response
@@ -118,9 +122,12 @@ public class InteractionManager {
 				answer = in.readLine();
 				answeringQuestion = false;
 				logger.info("Received answer: " + answer);
-				gui.showAnswer(answer);
+
+				String negativeResponse = negativeResponses[(int) (Math.random() * negativeResponses.length)];
+				logger.info("Negative response: " + negativeResponse);
+				gui.showAnswer(negativeResponse);
 				if (USE_NAO) {
-					tc.send(new Behaviour(1, "Propose", answer));
+					tc.send(new Behaviour(1, "Propose", negativeResponse));
 					tc.send(new Behaviour(1, "StandHead", ""));
 				}
 			} catch (IOException ex) {
@@ -134,6 +141,9 @@ public class InteractionManager {
 	}
 
 	private static void introduce() {
+		if (gui != null) {
+			gui.setVisible(false);
+		}
 		if (USE_NAO) {
 			tc.send(new Behaviour(1, "XWaving", "Hallo! Hoe heet je?"));
 		}
@@ -142,14 +152,25 @@ public class InteractionManager {
 			tc.send(new Behaviour(1, "Me", "Dag " + userName + "! Je kan nu je vragen aan mij stellen!"));
 			tc.send(new Behaviour(1, "Propose", "Zullen we beginnen?"));
 		}
+		isFirstQuestion = true;
+
+		if (gui == null) {
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					gui = new GUI();
+				}
+			});
+		} else {
+			gui.setVisible(true);
+		}
 	}
 
 	private static void setTimeout() {
 		new Thread(() -> {
 			try {
-				Thread.sleep(8000);
+				Thread.sleep(10000);
 				if (answeringQuestion) {
-					String update = updates[(int) (Math.random() * updates.length - 1)];
+					String update = updates[(int) (Math.random() * updates.length)];
 					tc.send(new Behaviour(1, "Think", update));
 					tc.send(new Behaviour(1, "StandHead", ""));
 					setTimeout();
@@ -177,7 +198,7 @@ public class InteractionManager {
 		out.println(question);
 		logger.info("Sending question: " + question);
 
-		String confirmation = confirmations[(int) (Math.random() * confirmations.length - 1)];
+		String confirmation = confirmations[(int) (Math.random() * confirmations.length)];
 		if (USE_NAO) {
 			tc.send(new Behaviour(1, "Me", confirmation + ": " + question));
 			tc.send(new Behaviour(1, "State", ""));
