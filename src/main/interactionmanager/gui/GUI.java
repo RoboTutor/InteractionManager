@@ -25,11 +25,10 @@ public class GUI extends JFrame implements ActionListener {
 	private JButton nextQuestionButton;
 
 	public GUI() {
-		setSize(500, 300);
-		setLocation(500, 500);
-
+		setSize(600, 300);
+		setLocation(500, 300);
 		setResizable(false);
-		setTitle("GUI");
+		setTitle("Nao");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		add(createPanel());
@@ -44,18 +43,18 @@ public class GUI extends JFrame implements ActionListener {
 		jPanel.add(new JLabel("Stel je vraag:"));
 
 		questionField = new JTextField();
-		questionField.setPreferredSize(new Dimension(400, 40));
+		questionField.setPreferredSize(new Dimension(500, 40));
 		questionField.setMaximumSize(questionField.getPreferredSize());
 		// questionField.setBorder(new LineBorder(Color.BLACK, 1));
 		questionField.getDocument().addDocumentListener(new QuestionFieldListener(questionField));
 		jPanel.add(questionField);
 
 		JPanel emptyPanel = new JPanel();
-		emptyPanel.setPreferredSize(new Dimension(400, 1));
+		emptyPanel.setPreferredSize(new Dimension(500, 1));
 		jPanel.add(emptyPanel);
 
 		answerArea = new JTextArea();
-		answerArea.setPreferredSize(new Dimension(400, 50));
+		answerArea.setPreferredSize(new Dimension(500, 50));
 		answerArea.setMaximumSize(answerArea.getPreferredSize());
 		answerArea.setEditable(false);
 		answerArea.setLineWrap(true);

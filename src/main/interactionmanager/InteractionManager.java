@@ -38,6 +38,7 @@ public class InteractionManager {
 
 	public static final String START_COMMAND = "START";
 	private static final String EXIT_COMMAND = "EXIT";
+	private static final String NO_ANSWER = "NO_ANSWER";
 
 	private static Socket socket = null;
 	private static PrintWriter out = null;
@@ -51,7 +52,7 @@ public class InteractionManager {
 	private static String[] confirmations = { "Je vroeg", "De vraag is", "Jouw vraag was" };
 	private static String[] prompts = new String[] { "Wil je nog een vraag stellen?", "Heb je een vraag?" };
 	private static String[] updates = new String[] { "Even nadenken.", "Even kijken.",
-			"Daar moet ik even naar kijken." };
+			"Daar moet ik even naar kijken" };
 	private static String[] negativeResponses = new String[] { "Daar kon ik geen antwoord op vinden.",
 			"Sorry, daar kon ik niets over vinden." };
 
@@ -86,7 +87,7 @@ public class InteractionManager {
 			if (!isFirstQuestion) {
 				String prompt = prompts[(int) (Math.random() * prompts.length)];
 				if (USE_NAO) {
-					tc.send(new Behaviour(1, "Propose", prompt));
+					tc.send(new Behaviour(1, "First", prompt));
 					tc.send(new Behaviour(1, "StandHead", ""));
 				}
 			}
@@ -123,11 +124,14 @@ public class InteractionManager {
 				answeringQuestion = false;
 				logger.info("Received answer: " + answer);
 
-				String negativeResponse = negativeResponses[(int) (Math.random() * negativeResponses.length)];
-				logger.info("Negative response: " + negativeResponse);
-				gui.showAnswer(negativeResponse);
+				if (answer.equals(NO_ANSWER)) {
+					String negativeResponse = negativeResponses[(int) (Math.random() * negativeResponses.length)];
+					logger.info("Negative response: " + negativeResponse);
+					answer = negativeResponse;
+				}
+				gui.showAnswer(answer);
 				if (USE_NAO) {
-					tc.send(new Behaviour(1, "Propose", negativeResponse));
+					tc.send(new Behaviour(1, "Propose", answer));
 					tc.send(new Behaviour(1, "StandHead", ""));
 				}
 			} catch (IOException ex) {
@@ -146,13 +150,17 @@ public class InteractionManager {
 		}
 		if (USE_NAO) {
 			tc.send(new Behaviour(1, "XWaving", "Hallo! Hoe heet je?"));
+			tc.send(new Behaviour(1, "StandHead", ""));
 		}
 		userName = JOptionPane.showInputDialog("Wat is je naam?");
 		if (USE_NAO) {
 			tc.send(new Behaviour(1, "Me", "Dag " + userName + "! Je kan nu je vragen aan mij stellen!"));
 			tc.send(new Behaviour(1, "Propose", "Zullen we beginnen?"));
+			tc.send(new Behaviour(1, "StandHead", ""));
 		}
+		logger.info("Introduced to " + userName);
 		isFirstQuestion = true;
+		updates[updates.length - 1] = "Daar moet ik even naar kijken, " + userName;
 
 		if (gui == null) {
 			SwingUtilities.invokeLater(new Runnable() {
@@ -200,8 +208,7 @@ public class InteractionManager {
 
 		String confirmation = confirmations[(int) (Math.random() * confirmations.length)];
 		if (USE_NAO) {
-			tc.send(new Behaviour(1, "Me", confirmation + ": " + question));
-			tc.send(new Behaviour(1, "State", ""));
+			tc.send(new Behaviour(1, "Propose", confirmation + ": " + question));
 			tc.send(new Behaviour(1, "StandHead", ""));
 		}
 	}
