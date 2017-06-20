@@ -50,7 +50,7 @@ public class InteractionManager {
 	private static Logger logger = null;
 
 	private static String[] confirmations = { "Je vroeg", "De vraag is", "Jouw vraag was" };
-	private static String[] prompts = new String[] { "Wil je nog een vraag stellen?", "Heb je een vraag?" };
+	private static String[] prompts = new String[] { "Wil je nog een vraag stellen?", "Heb je een vraag?", "Heb je nog een andere vraag?" };
 	private static String[] updates = new String[] { "Even nadenken.", "Even kijken.",
 			"Daar moet ik even naar kijken" };
 	private static String[] negativeResponses = new String[] { "Daar kon ik geen antwoord op vinden.",
